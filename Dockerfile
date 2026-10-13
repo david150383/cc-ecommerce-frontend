@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 # ---- build: VITE_* values are inlined into the bundle at build time ----
 FROM node:24-alpine AS build
 WORKDIR /app
