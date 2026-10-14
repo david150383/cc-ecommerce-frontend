@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSession } from "../auth/session";
 import { parseMajor, toMajorString } from "../lib/money";
 import { type Call, json, mockFetch, money, problem, product, renderApp } from "./harness";
@@ -9,6 +9,10 @@ const admin = { id: "admin-1", email: "admin@shop.local", fullName: "Admin", rol
 const customer = { ...admin, id: "c-1", roles: ["customer" as const] };
 const signIn = (u: typeof admin | typeof customer) => useSession.getState().setSession({ accessToken: "t", expiresIn: 900, csrfToken: "c", user: u });
 
+// Admin pages load lazily; transform the module once up front so test timing is about behaviour.
+beforeAll(async () => {
+  await import("../pages/admin");
+});
 beforeEach(() => signIn(admin));
 afterEach(() => {
   vi.unstubAllGlobals();

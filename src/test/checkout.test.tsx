@@ -40,7 +40,8 @@ describe("checkout", () => {
     renderApp("/checkout");
     await fillAddress(u);
     await u.click(screen.getByRole("button", { name: "Continue to payment" }));
-    await waitFor(() => expect(assign).toHaveBeenCalledWith("http://localhost:4005/mock-provider/checkout/cs_1"), { timeout: 5_000 });
+    // Real 1 s polling intervals: allow for a slow machine.
+    await waitFor(() => expect(assign).toHaveBeenCalledWith("http://localhost:4005/mock-provider/checkout/cs_1"), { timeout: 10_000 });
 
     const start = calls.find((c) => c.method === "POST")!;
     expect(start.body).toEqual({

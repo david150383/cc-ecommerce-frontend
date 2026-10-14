@@ -10,12 +10,10 @@ import { CatalogPage } from "./pages/CatalogPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { CheckoutResultPage } from "./pages/CheckoutResultPage";
 import { HomePage } from "./pages/HomePage";
+import { Admin } from "./pages/admin/lazy";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProductPage } from "./pages/ProductPage";
 import { StatusPage } from "./pages/StatusPage";
-
-type AdminModule = typeof import("./pages/admin");
-const admin = (name: keyof AdminModule) => async () => ({ Component: (await import("./pages/admin"))[name] });
 
 export const routes: RouteObject[] = [
   {
@@ -46,20 +44,20 @@ export const routes: RouteObject[] = [
         ),
         children: [
           {
-            lazy: admin("AdminLayout"),
+            element: <Admin.Layout />,
             children: [
-              { index: true, lazy: admin("AdminDashboard") },
-              { path: "products", lazy: admin("AdminProductsPage") },
-              { path: "products/new", lazy: admin("AdminNewProductPage") },
-              { path: "products/:productId", lazy: admin("AdminProductPage") },
-              { path: "inventory", lazy: admin("AdminInventoryPage") },
-              { path: "orders", lazy: admin("AdminOrdersPage") },
-              { path: "orders/:orderId", lazy: admin("AdminOrderPage") },
-              { path: "payments", lazy: admin("AdminPaymentsPage") },
-              { path: "checkouts", lazy: admin("AdminCheckoutsPage") },
-              { path: "checkouts/:sagaId", lazy: admin("AdminCheckoutPage") },
-              { path: "users", lazy: admin("AdminUsersPage") },
-              { path: "notifications", lazy: admin("AdminNotificationsPage") },
+              { index: true, element: <Admin.Dashboard /> },
+              { path: "products", element: <Admin.Products /> },
+              { path: "products/new", element: <Admin.NewProduct /> },
+              { path: "products/:productId", element: <Admin.Product /> },
+              { path: "inventory", element: <Admin.Inventory /> },
+              { path: "orders", element: <Admin.Orders /> },
+              { path: "orders/:orderId", element: <Admin.Order /> },
+              { path: "payments", element: <Admin.Payments /> },
+              { path: "checkouts", element: <Admin.Checkouts /> },
+              { path: "checkouts/:sagaId", element: <Admin.Checkout /> },
+              { path: "users", element: <Admin.Users /> },
+              { path: "notifications", element: <Admin.Notifications /> },
             ],
           },
         ],
