@@ -4,7 +4,7 @@ React storefront and admin UI for the e-commerce platform.
 
 | | |
 |---|---|
-| Stack | React 19, Vite 8, TypeScript 5.9, Tailwind CSS 4, React Router 8, Zod. Phase 5 adds TanStack Query, Zustand, Axios, React Hook Form |
+| Stack | React 19, Vite 8, TypeScript 5.9, Tailwind CSS 4, React Router 8, TanStack Query 5, Zustand 5, React Hook Form + Zod. HTTP is a small `fetch` wrapper (`src/api/http.ts`): no Axios |
 | Port | 5173 (dev server; container serves on 8080, mapped to 5173 in compose) |
 | Backends | Configured via `VITE_*_API_URL` (see [.env.example](.env.example)) |
 
@@ -13,7 +13,8 @@ React storefront and admin UI for the e-commerce platform.
 | Phase | Done |
 |---|---|
 | 1: skeleton | ✅ App shell (layout, skip link, nav), routing with 404, validated env config, Tailwind, `/status` page that health-checks every backend (verifies CORS end to end), tests, Dockerfile (nginx-unprivileged), CI |
-| 5: features | ⏳ Catalog, cart, checkout, auth flows, account and admin pages |
+| 5a | ✅ API client (problem+json errors, single-flight token refresh, cross-tab lock), session (memory-only access token), sign-in/register/forgot/reset/verify, catalog (search, category, sort, paging in the URL), product page (variant picker, live stock), cart (persisted, live stock checks), account |
+| 5b–5d | ⏳ Checkout and payment result, orders, notification preferences, admin pages, compose + end-to-end smoke test |
 
 ## Run locally
 

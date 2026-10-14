@@ -1,25 +1,22 @@
-import { render, screen } from "@testing-library/react";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { routes } from "../routes";
-
-function renderAt(path: string) {
-  render(<RouterProvider router={createMemoryRouter(routes, { initialEntries: [path] })} />);
-}
+import { mockFetch, renderApp } from "./harness";
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 describe("routing", () => {
-  it("renders the home page with navigation", () => {
-    renderAt("/");
+  it("renders the home page with navigation and featured products", async () => {
+    mockFetch({ "GET /api/v1/products": () => ({ data: [], page: { page: 1, pageSize: 8, total: 0 } }) });
+    renderApp("/");
     expect(screen.getByRole("heading", { level: 1, name: "Welcome" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Featured" })).toBeInTheDocument();
   });
 
   it("renders a not-found page for unknown routes", () => {
-    renderAt("/does-not-exist");
+    renderApp("/does-not-exist");
     expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
   });
 });
@@ -34,7 +31,7 @@ describe("status page", () => {
         throw new TypeError("Failed to fetch");
       }),
     );
-    renderAt("/status");
+    renderApp("/status");
     expect(await screen.findByText("Ready")).toBeInTheDocument();
     expect(await screen.findByText("Not ready")).toBeInTheDocument();
     expect(await screen.findAllByText("Unreachable")).toHaveLength(5);
