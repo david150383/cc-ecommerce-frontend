@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: { port: 5173, strictPort: true },
   preview: { port: 5173, strictPort: true },
+  build: {
+    rolldownOptions: {
+      // Libraries change far less often than app code: a separate chunk stays cached across releases.
+      output: { codeSplitting: { groups: [{ name: "vendor", test: /node_modules/ }] } },
+    },
+  },
   test: {
     environment: "jsdom",
     setupFiles: ["src/test/setup.ts"],

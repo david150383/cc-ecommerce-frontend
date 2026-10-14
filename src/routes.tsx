@@ -1,5 +1,5 @@
-import type { RouteObject } from "react-router";
-import { RequireAuth } from "./auth/guards";
+import { Outlet, type RouteObject } from "react-router";
+import { RequireAdmin, RequireAuth } from "./auth/guards";
 import { Layout } from "./components/Layout";
 import { AccountPage } from "./pages/account/AccountPage";
 import { NotificationsPage } from "./pages/account/NotificationsPage";
@@ -13,6 +13,9 @@ import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProductPage } from "./pages/ProductPage";
 import { StatusPage } from "./pages/StatusPage";
+
+type AdminModule = typeof import("./pages/admin");
+const admin = (name: keyof AdminModule) => async () => ({ Component: (await import("./pages/admin"))[name] });
 
 export const routes: RouteObject[] = [
   {
@@ -34,6 +37,33 @@ export const routes: RouteObject[] = [
       { path: "account/orders", element: <RequireAuth><OrdersPage /></RequireAuth> },
       { path: "account/orders/:orderId", element: <RequireAuth><OrderDetailPage /></RequireAuth> },
       { path: "account/notifications", element: <RequireAuth><NotificationsPage /></RequireAuth> },
+      {
+        path: "admin",
+        element: (
+          <RequireAdmin>
+            <Outlet />
+          </RequireAdmin>
+        ),
+        children: [
+          {
+            lazy: admin("AdminLayout"),
+            children: [
+              { index: true, lazy: admin("AdminDashboard") },
+              { path: "products", lazy: admin("AdminProductsPage") },
+              { path: "products/new", lazy: admin("AdminNewProductPage") },
+              { path: "products/:productId", lazy: admin("AdminProductPage") },
+              { path: "inventory", lazy: admin("AdminInventoryPage") },
+              { path: "orders", lazy: admin("AdminOrdersPage") },
+              { path: "orders/:orderId", lazy: admin("AdminOrderPage") },
+              { path: "payments", lazy: admin("AdminPaymentsPage") },
+              { path: "checkouts", lazy: admin("AdminCheckoutsPage") },
+              { path: "checkouts/:sagaId", lazy: admin("AdminCheckoutPage") },
+              { path: "users", lazy: admin("AdminUsersPage") },
+              { path: "notifications", lazy: admin("AdminNotificationsPage") },
+            ],
+          },
+        ],
+      },
       { path: "status", element: <StatusPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],

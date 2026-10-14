@@ -36,7 +36,8 @@ export interface Product extends Omit<ProductSummary, "lowestPrice" | "primaryIm
   description: string | null;
   variants: Variant[];
   images: Image[];
-  specifications: Record<string, string> | null;
+  specifications: { name: string; value: string }[];
+  version: number;
 }
 
 export interface Category {

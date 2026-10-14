@@ -73,7 +73,8 @@ export const product = {
   status: "PUBLISHED",
   featured: true,
   description: "Soft.",
-  specifications: { Material: "Cotton" },
+  specifications: [{ name: "Material", value: "Cotton" }],
+  version: 1,
   images: [{ url: "https://img.example/tee.jpg", alt: "Tee" }],
   variants: [
     { id: "v1", sku: "TEE-BLK-S", name: "Black, S", attributes: { color: "blk", size: "S" }, price: money(59_900), salePrice: null, effectivePrice: money(59_900), onSale: false, isActive: true },

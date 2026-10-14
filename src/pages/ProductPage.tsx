@@ -50,7 +50,7 @@ function ProductDetail({ product }: { product: Product }) {
   const image = product.images[0];
   const canAdd = !!variant && availability.data?.inStock && quantity + inCart <= Math.min(MAX_QUANTITY, availability.data.available);
   const fewLeft = availability.data && availability.data.available > 0 && availability.data.available <= 5;
-  const specs = useMemo(() => Object.entries(product.specifications ?? {}), [product.specifications]);
+  const specs = useMemo(() => product.specifications ?? [], [product.specifications]);
 
   return (
     <article aria-labelledby="page-title" className="grid gap-10 md:grid-cols-2">
@@ -137,10 +137,10 @@ function ProductDetail({ product }: { product: Product }) {
         {product.description && <p className="max-w-prose text-slate-700">{product.description}</p>}
         {specs.length > 0 && (
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
-            {specs.map(([k, v]) => (
-              <div key={k} className="contents">
-                <dt className="text-slate-500">{k}</dt>
-                <dd>{v}</dd>
+            {specs.map((spec) => (
+              <div key={spec.name} className="contents">
+                <dt className="text-slate-500">{spec.name}</dt>
+                <dd>{spec.value}</dd>
               </div>
             ))}
           </dl>
