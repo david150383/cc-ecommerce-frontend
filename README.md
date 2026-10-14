@@ -14,7 +14,8 @@ React storefront and admin UI for the e-commerce platform.
 |---|---|
 | 1: skeleton | ✅ App shell (layout, skip link, nav), routing with 404, validated env config, Tailwind, `/status` page that health-checks every backend (verifies CORS end to end), tests, Dockerfile (nginx-unprivileged), CI |
 | 5a | ✅ API client (problem+json errors, single-flight token refresh, cross-tab lock), session (memory-only access token), sign-in/register/forgot/reset/verify, catalog (search, category, sort, paging in the URL), product page (variant picker, live stock), cart (persisted, live stock checks), account |
-| 5b–5d | ⏳ Checkout and payment result, orders, notification preferences, admin pages, compose + end-to-end smoke test |
+| 5b | ✅ Checkout (one idempotency key per attempt, waits for the saga, payment redirect only to the Payment Service or Stripe), payment result driven by the saga's status (never by `?result=success`), order history and detail, notification preferences and history |
+| 5c–5d | ⏳ Admin pages, compose + end-to-end smoke test |
 
 ## Run locally
 
