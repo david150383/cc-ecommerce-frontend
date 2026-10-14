@@ -1,0 +1,6 @@
+{
+  // Playwright runs in Node, not the browser: its own type environment.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": ["node"], "lib": ["ES2023", "DOM"] },
+  "include": ["e2e", "playwright.config.ts"]
+}
