@@ -111,3 +111,53 @@ describe("reset password link", () => {
     expect(within(await screen.findByRole("alert")).getByRole("link", { name: "Request a new one" })).toBeInTheDocument();
   });
 });
+
+describe("order detail: cancelling", () => {
+  const customer = { id: "u1", email: "a@example.com", fullName: "Asha Rao", roles: ["customer" as const], emailVerified: true, status: "ACTIVE" };
+  const order = (status: string) => ({
+    id: "0192a1b2-0000-7000-8000-000000000201", customerId: "u1", status, currency: "INR",
+    items: [{ sku: "TEE-1", name: "Tee", quantity: 1, unitPrice: money(59_900), lineTotal: money(59_900), discount: money(0), tax: money(0) }],
+    totals: { subtotal: money(59_900), discount: money(0), tax: money(0), shipping: money(0), grandTotal: money(59_900) },
+    couponCode: null,
+    shippingAddress: { name: "Asha Rao", line1: "12 MG Road", city: "Bengaluru", postalCode: "560001", country: "IN", phone: "+919800000000" },
+    cancellationReason: null, statusHistory: [], createdAt: "2026-10-15T09:00:00.000Z", updatedAt: "2026-10-15T09:00:00.000Z",
+  });
+  const path = `/account/orders/${order("CONFIRMED").id}`;
+  beforeEach(() => useSession.getState().setSession({ accessToken: "t", expiresIn: 900, csrfToken: "c", user: customer }));
+
+  it("a paid order asks for confirmation, then requests the cancellation and shows the refund in progress", async () => {
+    const { calls } = mockFetch({
+      [`GET /api/v1/orders/${order("CONFIRMED").id}`]: () => ({ order: order("CONFIRMED") }),
+      [`POST /api/v1/orders/${order("CONFIRMED").id}/cancel`]: () => ({ order: order("CANCELLATION_PENDING") }),
+    });
+    const user = userEvent.setup();
+    renderApp(path);
+    await user.click(await screen.findByRole("button", { name: "Cancel order" }));
+    expect(calls.some((c) => c.method === "POST")).toBe(false); // nothing sent before confirming
+    expect(screen.getByText(/full refund/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Yes, cancel and refund" }));
+    expect(await screen.findByText("Cancellation requested")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/being processed/);
+    expect(screen.queryByRole("button", { name: "Cancel order" })).not.toBeInTheDocument();
+    expect(calls.filter((c) => c.method === "POST")).toHaveLength(1);
+  });
+
+  it("shipped orders cannot be cancelled; a refused cancellation shows the server's reason", async () => {
+    mockFetch({ [`GET /api/v1/orders/${order("SHIPPED").id}`]: () => ({ order: order("SHIPPED") }) });
+    const first = renderApp(path);
+    expect(await screen.findByText("Shipped")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cancel order" })).not.toBeInTheDocument();
+    first.unmount();
+
+    mockFetch({
+      [`GET /api/v1/orders/${order("PROCESSING").id}`]: () => ({ order: order("PROCESSING") }),
+      [`POST /api/v1/orders/${order("PROCESSING").id}/cancel`]: () => problem(409, "CANNOT_CANCEL", "An order that is SHIPPED cannot be cancelled"),
+    });
+    const user = userEvent.setup();
+    renderApp(path);
+    await user.click(await screen.findByRole("button", { name: "Cancel order" }));
+    await user.click(screen.getByRole("button", { name: "Yes, cancel and refund" }));
+    expect(await screen.findByText(/cannot be cancelled/)).toBeInTheDocument();
+  });
+});
+

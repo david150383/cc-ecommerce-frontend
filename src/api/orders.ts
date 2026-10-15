@@ -59,7 +59,14 @@ const S = env.VITE_SAGA_API_URL;
 export const ordersApi = {
   mine: (cursor?: string) => request<CursorPage<Order>>(O, "/api/v1/orders/my-orders", { query: { limit: 10, cursor } }),
   get: (id: string, signal?: AbortSignal) => request<{ order: Order }>(O, `/api/v1/orders/${encodeURIComponent(id)}`, { signal }),
+  /** Idempotent: an order that is already cancelled (or cancellation-pending) is returned as is. */
+  cancel: (id: string) => request<{ order: Order }>(O, `/api/v1/orders/${encodeURIComponent(id)}/cancel`, { method: "POST" }),
 };
+
+/** Mirrors the Order Service's state machine: no money taken yet, so cancelling is immediate. */
+export const CANCELLABLE_BEFORE_PAYMENT: readonly OrderStatus[] = ["PENDING", "INVENTORY_RESERVING", "INVENTORY_RESERVED", "PAYMENT_PENDING"];
+/** Paid but not shipped: cancelling means a refund, so it is only requested. */
+export const CANCELLABLE_AFTER_PAYMENT: readonly OrderStatus[] = ["CONFIRMED", "PROCESSING"];
 
 export const checkoutApi = {
   /** Only SKUs and quantities: prices, totals and discounts are computed by the services. */

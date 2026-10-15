@@ -1,7 +1,8 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { ApiError } from "../../api/http";
-import { type Order, type OrderStatus, ordersApi } from "../../api/orders";
+import { CANCELLABLE_AFTER_PAYMENT, CANCELLABLE_BEFORE_PAYMENT, type Order, type OrderStatus, ordersApi } from "../../api/orders";
 import { Button, ErrorAlert, PageTitle, Spinner } from "../../components/ui";
 import { formatMoney } from "../../lib/money";
 
@@ -101,6 +102,10 @@ export function OrderDetail({ order: o, admin = false }: { order: Order; admin?:
         <StatusBadge status={o.status} />
       </div>
       <p className="text-sm text-slate-600">Placed {date(o.createdAt)}</p>
+      {!admin && <CancelOrder order={o} />}
+      {!admin && (o.status === "CANCELLATION_PENDING" || o.status === "REFUND_PENDING") && (
+        <p role="status" className="text-sm">Your cancellation is being processed. The full amount goes back to your original payment method.</p>
+      )}
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-slate-200">
@@ -146,5 +151,37 @@ export function OrderDetail({ order: o, admin = false }: { order: Order; admin?:
         </ol>
       </section>
     </article>
+  );
+}
+
+/** Two-step (ask, then confirm) so a stray click never cancels an order. */
+function CancelOrder({ order: o }: { order: Order }) {
+  const [confirming, setConfirming] = useState(false);
+  const queryClient = useQueryClient();
+  const cancel = useMutation({
+    mutationFn: () => ordersApi.cancel(o.id),
+    onSuccess: ({ order }) => {
+      queryClient.setQueryData(["order", o.id], { order });
+      void queryClient.invalidateQueries({ queryKey: ["my-orders"] });
+      setConfirming(false);
+    },
+  });
+  const paid = CANCELLABLE_AFTER_PAYMENT.includes(o.status);
+  if (!paid && !CANCELLABLE_BEFORE_PAYMENT.includes(o.status)) return null;
+  return (
+    <div className="space-y-2">
+      {!confirming ? (
+        <Button variant="secondary" onClick={() => setConfirming(true)}>Cancel order</Button>
+      ) : (
+        <div role="group" aria-label="Confirm cancellation" className="flex flex-wrap items-center gap-3 text-sm">
+          <span>{paid ? "Cancel this order? You will get a full refund." : "Cancel this order?"}</span>
+          <Button variant="danger" onClick={() => cancel.mutate()} disabled={cancel.isPending}>
+            {paid ? "Yes, cancel and refund" : "Yes, cancel"}
+          </Button>
+          <Button variant="link" onClick={() => setConfirming(false)} disabled={cancel.isPending}>Keep order</Button>
+        </div>
+      )}
+      <ErrorAlert error={cancel.error} />
+    </div>
   );
 }
