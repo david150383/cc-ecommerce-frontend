@@ -22,7 +22,7 @@ export interface Movement {
   deltaReserved: number;
   reason: string;
   referenceId: string | null;
-  actor: string;
+  actor: string | null;
   note: string | null;
   createdAt: string;
 }

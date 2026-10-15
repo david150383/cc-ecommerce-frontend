@@ -128,7 +128,7 @@ function StockPanel({ sku, onClose }: { sku: string; onClose: () => void }) {
         <tbody>
           {movements.data?.data.map((m) => (
             <tr key={m.id} className="border-b border-slate-100">
-              <Td>{when(m.createdAt)}</Td><Td right>{m.deltaOnHand > 0 ? `+${m.deltaOnHand}` : m.deltaOnHand}</Td><Td right>{m.deltaReserved}</Td><Td>{m.reason}</Td><Td>{m.actor}</Td><Td>{m.note ?? ""}</Td>
+              <Td>{when(m.createdAt)}</Td><Td right>{m.deltaOnHand > 0 ? `+${m.deltaOnHand}` : m.deltaOnHand}</Td><Td right>{m.deltaReserved}</Td><Td>{m.reason}</Td><Td>{m.actor ?? "system"}</Td><Td>{m.note ?? ""}</Td>
             </tr>
           ))}
         </tbody>

@@ -1,14 +1,14 @@
 {
   "source": "ecommerce-contracts",
-  "version": "v1.1.0",
-  "commit": "739205077580fd2aad50fbe03fd327e7a02be40e",
+  "version": "v1.3.0",
+  "commit": "253678813583dfc147abb18c630373a8e5157803",
   "service": "frontend",
   "directories": [
     "contracts/openapi"
   ],
   "files": {
     "contracts/openapi/auth-service.openapi.json": "e9705d87b4a1a9f62283171b1eaa99bd79d734bb3ba55bb6c0d43db47e2676e0",
-    "contracts/openapi/inventory-service.openapi.json": "5bf2651be22ec1ab783bd2c060fb438d6097a35b741969891b31f5bc958e491e",
+    "contracts/openapi/inventory-service.openapi.json": "2de22556cad2f0f1e0de92869fe08ee42c16b8ea7d804484dc89a8de8e0fa335",
     "contracts/openapi/notification-service.openapi.json": "9cd594ddc6ab82dc046330b4def0e17f57c6d660b9130e9d0cf419b2010a90e1",
     "contracts/openapi/order-service.openapi.json": "c5f5e6ba00427f450d86efb5d3ac95afee2277eb77d1003eefa7a07403dd3e5e",
     "contracts/openapi/payment-service.openapi.json": "548be9f2629ed9a79d780ca8fdf531264577187c3ffb41e4e6bd89a50d0cea6f",

@@ -4,15 +4,14 @@
  * Each line asserts: what the service PUBLISHES (generated from its OpenAPI document) is assignable to
  * the type this UI READS (hand-written in src/api). If a pinned release drops, renames or changes a field
  * the UI relies on, `npm run typecheck` fails here, before anything ships. Fields the API adds are fine.
- *
- * Not covered: Inventory publishes no response schemas (its controllers do not declare response types).
  */
-import type { Payment, Refund, AdminNotification, DeadLetter, Saga, StockItem } from "./admin";
-import type { Category, Product, ProductSummary } from "./catalog";
+import type { Payment, Refund, AdminNotification, DeadLetter, Movement, Saga, StockItem } from "./admin";
+import type { Availability, Category, Product, ProductSummary } from "./catalog";
 import type { NotificationItem, Preferences } from "./notifications";
 import type { CheckoutStatus, Order } from "./orders";
 import type { User } from "../auth/session";
 import type * as Auth from "./generated/auth-service";
+import type * as InventoryApi from "./generated/inventory-service";
 import type * as Notification from "./generated/notification-service";
 import type * as OrderApi from "./generated/order-service";
 import type * as PaymentApi from "./generated/payment-service";
@@ -36,7 +35,7 @@ export const contractChecks = [
   ok<Assignable<Notification.SchemaNotification, NotificationItem>>(true),
   ok<Assignable<Notification.SchemaAdminNotification, AdminNotification>>(true),
   ok<Assignable<Notification.SchemaDeadLetter, DeadLetter>>(true),
+  ok<Assignable<InventoryApi.SchemaAvailabilityDto, Availability>>(true),
+  ok<Assignable<InventoryApi.SchemaStockDto, StockItem>>(true),
+  ok<Assignable<InventoryApi.SchemaMovementDto, Movement>>(true),
 ] as const;
-
-// Inventory: the UI's StockItem cannot be checked (no published response schema). Kept visible on purpose.
-export type UncheckedInventoryTypes = StockItem;

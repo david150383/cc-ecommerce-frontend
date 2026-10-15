@@ -145,6 +145,22 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        FieldErrorDto: {
+            path: string;
+            message: string;
+        };
+        ProblemDto: {
+            /** @example https://errors.ecommerce.local/not-found */
+            type: string;
+            title: string;
+            status: number;
+            /** @example NOT_FOUND */
+            code: string;
+            detail?: string;
+            instance: string;
+            correlationId: string;
+            errors?: components["schemas"]["FieldErrorDto"][];
+        };
         ReservationLineDto: {
             /** @example TEE-CLASSIC-BLK-M */
             sku: string;
@@ -162,6 +178,87 @@ export interface components {
              * @example 2700
              */
             ttlSeconds?: number;
+        };
+        /** @enum {string} */
+        ReservationStatus: "ACTIVE" | "CONFIRMED" | "RELEASED" | "EXPIRED" | "REJECTED" | "RETURNED";
+        ReservedLineDto: {
+            sku: string;
+            quantity: number;
+        };
+        UnavailableLineDto: {
+            sku: string;
+            requested: number;
+            available: number;
+        };
+        ReservationDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            orderId: string;
+            /** Format: uuid */
+            sagaId: string | null;
+            status: components["schemas"]["ReservationStatus"];
+            lines: components["schemas"]["ReservedLineDto"][];
+            /** Format: date-time */
+            expiresAt: string;
+            unavailableLines: components["schemas"]["UnavailableLineDto"][] | null;
+            releaseReason: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ReservationEnvelopeDto: {
+            reservation: components["schemas"]["ReservationDto"];
+        };
+        StockDto: {
+            /** @example TEE-CLASSIC-BLK-M */
+            sku: string;
+            onHand: number;
+            reserved: number;
+            /** @description onHand - reserved */
+            available: number;
+            lowStockThreshold: number;
+            lowStock: boolean;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AvailabilityDto: {
+            /** @example TEE-CLASSIC-BLK-M */
+            sku: string;
+            /** @description Units that can still be ordered (0 when out of stock) */
+            available: number;
+            inStock: boolean;
+        };
+        CursorPageDto: {
+            limit: number;
+            /** @description Pass as `cursor` for the next page; null on the last page */
+            nextCursor: string | null;
+        };
+        StockListDto: {
+            data: components["schemas"]["StockDto"][];
+            page: components["schemas"]["CursorPageDto"];
+        };
+        LowStockListDto: {
+            data: components["schemas"]["StockDto"][];
+        };
+        MovementDto: {
+            /** Format: uuid */
+            id: string;
+            deltaOnHand: number;
+            deltaReserved: number;
+            /** @enum {string} */
+            reason: "RESTOCK" | "RETURN" | "DAMAGED" | "CORRECTION" | "RESERVED" | "RESERVATION_CONFIRMED" | "RESERVATION_RELEASED" | "RESERVATION_EXPIRED" | "RESERVATION_RETURNED";
+            /** @description Reservation id or adjustment key */
+            referenceId: string | null;
+            actor: string | null;
+            correlationId: string | null;
+            note: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        MovementListDto: {
+            data: components["schemas"]["MovementDto"][];
         };
         AdjustStockDto: {
             /**
@@ -182,8 +279,22 @@ export interface components {
     headers: never;
     pathItems: never;
 }
+export type SchemaFieldErrorDto = components['schemas']['FieldErrorDto'];
+export type SchemaProblemDto = components['schemas']['ProblemDto'];
 export type SchemaReservationLineDto = components['schemas']['ReservationLineDto'];
 export type SchemaCreateReservationDto = components['schemas']['CreateReservationDto'];
+export type SchemaReservationStatus = components['schemas']['ReservationStatus'];
+export type SchemaReservedLineDto = components['schemas']['ReservedLineDto'];
+export type SchemaUnavailableLineDto = components['schemas']['UnavailableLineDto'];
+export type SchemaReservationDto = components['schemas']['ReservationDto'];
+export type SchemaReservationEnvelopeDto = components['schemas']['ReservationEnvelopeDto'];
+export type SchemaStockDto = components['schemas']['StockDto'];
+export type SchemaAvailabilityDto = components['schemas']['AvailabilityDto'];
+export type SchemaCursorPageDto = components['schemas']['CursorPageDto'];
+export type SchemaStockListDto = components['schemas']['StockListDto'];
+export type SchemaLowStockListDto = components['schemas']['LowStockListDto'];
+export type SchemaMovementDto = components['schemas']['MovementDto'];
+export type SchemaMovementListDto = components['schemas']['MovementListDto'];
 export type SchemaAdjustStockDto = components['schemas']['AdjustStockDto'];
 export type $defs = Record<string, never>;
 export interface operations {
@@ -202,11 +313,68 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Replay of the same key (header Idempotency-Replayed: true) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReservationEnvelopeDto"];
+                };
+            };
+            /** @description Reserved. Header Location: the reservation */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReservationEnvelopeDto"];
+                };
+            };
+            /** @description Invalid body or missing Idempotency-Key */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not a service or admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description INSUFFICIENT_STOCK (nothing reserved; extra: reservationId, unavailableLines) or ORDER_ALREADY_RESERVED */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description IDEMPOTENCY_KEY_REUSED */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
             };
         };
     };
@@ -225,7 +393,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReservationEnvelopeDto"];
+                };
+            };
+            /** @description Unknown reservation */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
             };
         };
     };
@@ -244,7 +423,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReservationEnvelopeDto"];
+                };
+            };
+            /** @description Unknown reservation */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description RESERVATION_EXPIRED or the reservation is released/rejected */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
             };
         };
     };
@@ -263,7 +462,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReservationEnvelopeDto"];
+                };
+            };
+            /** @description Unknown reservation */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description RESERVATION_CONFIRMED: confirmed stock is returned with InventoryReturnRequested instead */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
             };
         };
     };
@@ -285,7 +504,36 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StockListDto"];
+                };
+            };
+            /** @description Invalid query */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not an admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
             };
         };
     };
@@ -302,7 +550,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LowStockListDto"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not an admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
             };
         };
     };
@@ -317,11 +585,23 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Admins get the full stock record; everyone else only availability */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AvailabilityDto"] | components["schemas"]["StockDto"];
+                };
+            };
+            /** @description Unknown SKU */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
             };
         };
     };
@@ -342,11 +622,68 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Header Idempotency-Replayed: true on a replay */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StockDto"];
+                };
+            };
+            /** @description Invalid body or missing Idempotency-Key */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not an admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Unknown SKU */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description WOULD_UNDERCUT_RESERVATIONS: on hand would drop below what is reserved */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description IDEMPOTENCY_KEY_REUSED: the key was used for a different adjustment */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
             };
         };
     };
@@ -365,7 +702,36 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MovementListDto"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not an admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Unknown SKU */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
             };
         };
     };
