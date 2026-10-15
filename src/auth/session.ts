@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import { env } from "../config/env";
-import { request, setAuthHooks } from "../api/http";
+import { ApiError, request, setAuthHooks } from "../api/http";
+
+/** Retries of a refresh that failed with a 5xx (the server rolled back; no rotation happened). */
+export const TRANSIENT_RETRY_DELAYS_MS = [1_000, 3_000];
 
 export type Role = "customer" | "admin";
 
@@ -74,19 +77,33 @@ export function refreshSession(): Promise<string | null> {
         useSession.getState().clear();
         return null;
       }
-      try {
-        const r = await request<LoginResponse>(env.VITE_AUTH_API_URL, "/api/v1/auth/refresh", {
-          method: "POST",
-          auth: false,
-          withCredentials: true,
-          headers: { "x-csrf-token": csrf },
-        });
-        useSession.getState().setSession(r);
-        return r.accessToken;
-      } catch {
-        useSession.getState().clear();
-        return null;
+      // Only 401/403 mean the session is gone. A 5xx means Auth failed and rolled back (the token was NOT
+      // rotated), so retrying is safe; a network error is NOT retried: the server may have rotated the
+      // token without us receiving the new cookie, and a retry with the old one would be treated as
+      // token theft (reuse detection revokes the session). Neither signs the user out.
+      for (const delay of [0, ...TRANSIENT_RETRY_DELAYS_MS]) {
+        if (delay) await new Promise((r) => setTimeout(r, delay));
+        try {
+          const r = await request<LoginResponse>(env.VITE_AUTH_API_URL, "/api/v1/auth/refresh", {
+            method: "POST",
+            auth: false,
+            withCredentials: true,
+            headers: { "x-csrf-token": csrf },
+          });
+          useSession.getState().setSession(r);
+          return r.accessToken;
+        } catch (err) {
+          if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+            useSession.getState().clear();
+            return null;
+          }
+          if (!(err instanceof ApiError && err.status >= 500)) break; // network error: do not retry
+        }
       }
+      // Still failing: keep whatever session we have (its access token may still be valid). On page load
+      // there is none yet: treat as signed out for now, without revoking anything server-side.
+      if (useSession.getState().status === "loading") useSession.getState().clear();
+      return null;
     };
     try {
       return typeof navigator !== "undefined" && navigator.locks

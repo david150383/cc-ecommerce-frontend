@@ -61,6 +61,36 @@ describe("http client", () => {
   });
 });
 
+describe("refresh failures (only 401/403 sign the user out)", () => {
+  it("a 5xx is retried (Auth rolled back, no rotation happened) and the session survives", async () => {
+    useSession.getState().setSession(login("old"));
+    let n = 0;
+    const { calls } = mockFetch({ "POST /api/v1/auth/refresh": () => (++n === 1 ? problem(500, "INTERNAL") : json(login("new"))) });
+    expect(await refreshSession()).toBe("new");
+    expect(calls.filter((c) => c.url.endsWith("/refresh"))).toHaveLength(2);
+    expect(useSession.getState().status).toBe("authenticated");
+  });
+
+  it("a persistent 5xx keeps a signed-in user signed in", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    useSession.getState().setSession(login("still-valid"));
+    mockFetch({ "POST /api/v1/auth/refresh": () => problem(503, "UNAVAILABLE") });
+    const p = refreshSession();
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(await p).toBeNull();
+    expect(useSession.getState()).toMatchObject({ status: "authenticated", accessToken: "still-valid" });
+    vi.useRealTimers();
+  });
+
+  it("a network error is NOT retried (the server may have rotated the token already) and does not sign out", async () => {
+    useSession.getState().setSession(login("old"));
+    const { calls } = mockFetch({ "POST /api/v1/auth/refresh": () => { throw new TypeError("Failed to fetch"); } });
+    expect(await refreshSession()).toBeNull();
+    expect(calls).toHaveLength(1);
+    expect(useSession.getState().status).toBe("authenticated");
+  });
+});
+
 describe("session bootstrap", () => {
   it("resumes from the refresh cookie when a CSRF cookie exists; stays anonymous otherwise", async () => {
     mockFetch({ "POST /api/v1/auth/refresh": () => json(login("t")) });
