@@ -237,7 +237,7 @@ function VariantRow({ productId, variant: v, onSaved }: { productId: string; var
   return (
     <tr className="border-b border-slate-100">
       <Td mono>{v.sku}</Td>
-      <Td>{v.name}</Td>
+      <Td>{v.name ?? <span className="text-slate-400">—</span>}</Td>
       <Td><input aria-label={`Price of ${v.sku}`} value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" className="w-24 rounded border border-slate-300 px-2 py-1" /></Td>
       <Td><input aria-label={`Sale price of ${v.sku}`} value={sale} onChange={(e) => setSale(e.target.value)} inputMode="decimal" placeholder="none" className="w-24 rounded border border-slate-300 px-2 py-1" /></Td>
       <Td><input type="checkbox" aria-label={`${v.sku} is active`} checked={active} onChange={(e) => setActive(e.target.checked)} /></Td>

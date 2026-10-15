@@ -75,7 +75,7 @@ function ProductDetail({ product }: { product: Product }) {
             onSubmit={(e) => {
               e.preventDefault();
               if (!variant || !canAdd) return;
-              add({ sku: variant.sku, productSlug: product.slug, name: product.name, variantName: variant.name, image: image?.url ?? null, unitPrice: variant.effectivePrice }, quantity);
+              add({ sku: variant.sku, productSlug: product.slug, name: product.name, variantName: variant.name ?? variant.sku, image: image?.url ?? null, unitPrice: variant.effectivePrice }, quantity);
               setAdded(true);
             }}
           >

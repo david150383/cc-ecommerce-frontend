@@ -23,7 +23,8 @@ export interface ProductSummary {
 export interface Variant {
   id: string;
   sku: string;
-  name: string;
+  /** Optional in the catalog: fall back to the SKU when showing it. */
+  name: string | null;
   attributes: Record<string, string>;
   price: Money;
   salePrice: Money | null;
@@ -32,7 +33,7 @@ export interface Variant {
   isActive: boolean;
 }
 
-export interface Product extends Omit<ProductSummary, "lowestPrice" | "primaryImage"> {
+export interface Product extends Omit<ProductSummary, "lowestPrice" | "primaryImage" | "onSale"> {
   description: string | null;
   variants: Variant[];
   images: Image[];

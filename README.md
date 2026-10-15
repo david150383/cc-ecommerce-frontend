@@ -59,4 +59,7 @@ It needs every service, so it is not part of CI here (CI runs lint, typecheck, u
 - The browser is only ever sent to pay at the Payment Service's origin or `checkout.stripe.com`.
 - Admin code is a separate chunk, requested only after the role check passes.
 - Content-Security-Policy: scripts and styles from this origin only, API calls only to the configured services.
-- Generated API clients replace hand-written calls in Phase 6, when `ecommerce-contracts` exists.
+- API contracts are **pinned**: `contracts/openapi` is vendored from an `ecommerce-contracts` release
+  (`contracts.lock.json`), `npm run contracts:types` generates `src/api/generated`, and
+  `src/api/contract-check.ts` makes the typecheck fail if a pinned API no longer provides what a UI type reads.
+  (The calls stay hand-written: one small typed client per service reads better than a generated SDK here.)

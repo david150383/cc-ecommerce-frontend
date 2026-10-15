@@ -1,0 +1,18 @@
+{
+  "source": "ecommerce-contracts",
+  "version": "v1.1.0",
+  "commit": "739205077580fd2aad50fbe03fd327e7a02be40e",
+  "service": "frontend",
+  "directories": [
+    "contracts/openapi"
+  ],
+  "files": {
+    "contracts/openapi/auth-service.openapi.json": "e9705d87b4a1a9f62283171b1eaa99bd79d734bb3ba55bb6c0d43db47e2676e0",
+    "contracts/openapi/inventory-service.openapi.json": "5bf2651be22ec1ab783bd2c060fb438d6097a35b741969891b31f5bc958e491e",
+    "contracts/openapi/notification-service.openapi.json": "9cd594ddc6ab82dc046330b4def0e17f57c6d660b9130e9d0cf419b2010a90e1",
+    "contracts/openapi/order-service.openapi.json": "c5f5e6ba00427f450d86efb5d3ac95afee2277eb77d1003eefa7a07403dd3e5e",
+    "contracts/openapi/payment-service.openapi.json": "548be9f2629ed9a79d780ca8fdf531264577187c3ffb41e4e6bd89a50d0cea6f",
+    "contracts/openapi/product-service.openapi.json": "35155d63df983caa95d2f391742624c1e37d9af0b529bf305623d4252defbe21",
+    "contracts/openapi/saga-orchestrator.openapi.json": "7d3e946baa28fd4a77cfee72156c16ec16b613090a3f03a8af213cf0ba7c969b"
+  }
+}

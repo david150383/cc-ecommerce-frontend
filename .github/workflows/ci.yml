@@ -23,7 +23,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npm run typecheck
+      - name: Generated API types match the pinned contracts
+        run: npm run contracts:types && git diff --exit-code src/api/generated
+      - name: Typecheck (includes the compile-time contract check, src/api/contract-check.ts)
+        run: npm run typecheck
       - run: npm test
       - run: npm run build
 
