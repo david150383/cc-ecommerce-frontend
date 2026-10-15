@@ -90,6 +90,17 @@ describe("checkout", () => {
   });
 });
 
+describe("checkout limits", () => {
+  it("explains the open-checkouts limit instead of a generic 'too many attempts'", async () => {
+    mockFetch({ "POST /api/v1/checkout": () => problem(429, "TOO_MANY_ACTIVE_CHECKOUTS") });
+    const u = userEvent.setup();
+    renderApp("/checkout");
+    await fillAddress(u);
+    await u.click(screen.getByRole("button", { name: "Continue to payment" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("You already have checkouts waiting for payment");
+  });
+});
+
 describe("payment result page", () => {
   it("?result=success proves nothing: until the saga says COMPLETED it keeps waiting, then confirms and empties the cart", async () => {
     let completed = false;

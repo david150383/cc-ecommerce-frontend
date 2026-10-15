@@ -83,7 +83,16 @@ export function CheckoutPage() {
       <div className="space-y-6">
         <PageTitle>Checkout</PageTitle>
         {currencies.size > 1 && <Alert>Your cart mixes currencies; remove items until one currency is left.</Alert>}
-        {place.error instanceof ApiError && place.error.code === "IDEMPOTENCY_KEY_REUSED" ? <Alert>Please try again.</Alert> : <ErrorAlert error={place.error} />}
+        {place.error instanceof ApiError && place.error.code === "TOO_MANY_ACTIVE_CHECKOUTS" ? (
+          <Alert>
+            You already have checkouts waiting for payment. Pay for one of them or let it expire, then try again.{" "}
+            <Link to="/account/orders" className="underline">Your orders</Link>
+          </Alert>
+        ) : place.error instanceof ApiError && place.error.code === "IDEMPOTENCY_KEY_REUSED" ? (
+          <Alert>Please try again.</Alert>
+        ) : (
+          <ErrorAlert error={place.error} />
+        )}
         <form noValidate onSubmit={form.handleSubmit((v) => place.mutate(v))} className="space-y-4" aria-describedby="checkout-note">
           <fieldset className="grid gap-4 sm:grid-cols-2" disabled={busy}>
             <legend className="mb-2 text-lg font-semibold">Shipping address</legend>
